@@ -1,0 +1,285 @@
+<%@ Language=VBScript %>
+<%Option Explicit%>
+<!-- #INCLUDE FILE="../shared/clsDebug.asp"-->
+<!--#Include File="../shared/constants.asp"-->
+<!--#Include File="../shared/clsPerson.asp"-->
+<%
+	Dim oDebug
+	Set oDebug = New clsDebug
+	oDebug.Enabled = IS_DEBUG_ENABLED
+%>
+<%
+	Const QRYSTR_PAGE = "page"
+	Const QRYSTR_PAGESIZE = "pagesize"
+	Const DEFAULT_PAGESIZE = 2
+	Const DEFAULT_PAGE = 1
+	
+	Dim mrs
+	Dim mintCurrentPage
+	Dim mintPageSize
+	Dim mintMaxPages
+	Dim mintMaxRecs
+	Dim iCounter
+	Dim mstrLoginError
+	
+	Call Main()
+%>
+
+<html>
+<head>
+<title>timgifford.net</title>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<script Language="JavaScript" SRC="../shared/util.js"></script>
+
+<LINK rel="stylesheet" type="text/css" href="../themes/pc_ie.css">
+</head>
+<!-- ImageReady Slices (tim_02.psd) --> 
+<!--#INCLUDE FILE="../shared/header.asp"-->
+
+	<table border="0" cellpadding="2" width="310">
+<%If Session(SESSION_IS_LOGGED_IN) Then%>
+	  <tr>
+	    <td colspan="2"><a href="../points/default.asp">Points</a> | <a href="links.asp">Links</a></td>
+	    <td align="right"><a href="../forum/pop_profile.asp?mode=goEdit&id=<%=Session(SESSION_PERSON_ID)%>"><%=Session(SESSION_USERNAME)%></a></td>
+	  </tr>
+	  <tr>
+	    <td colspan="3" valign="top">
+	       <b>Edit your Profile</b><br />
+	       Click on your username in the upper right corner to edit your profile.<br /><br /> 
+	       
+	       <b><a href="../survey/OverView.htm">Survey Results</a></b><br />
+	       These are the responses I got back from the survey. Thanks (and 25 points) to all who took the time to fill it out. 
+	       <br /><br />
+			</td>
+<%Else%>
+	  <tr>
+	    <td colspan="2">&nbsp;</td>
+	    <td class="ErrValidation"><%=mstrLoginError%></td>
+	  </tr>
+	  <tr>
+	    <td valign="top">
+			<b><a href="../profile/profileedit.asp">Signup...</a></b><br />
+	       Membership does have its privilages. 
+	       Where else can you earn "Reward Points" for attending 
+	       Official Summer of Tim events?<br /><br /> 
+	       
+	       Oh yeah, and you have to be a member if you want to see the <a href="../events/default.asp">pics</a>.<br /><br />
+	    </td>
+		<td width="10">&nbsp;</td>
+		<td valign="top">
+			<form name="form1" action="<%=Request.ServerVariables("SCRIPT_NAME")%>" method="POST">
+			<table class="box" border="0" cellpadding="2" width="150">
+			  <tr>
+			    <td width="50">
+					Username:<br />
+					<input name="txtUsername"></input>
+			    </td>
+			  </tr>
+			  <tr>
+			    <td>
+						Password: <a href="../home/forgetpassword.asp">Remind Me</a><br />
+						<input type="password" name="txtPassword"></input></td>
+			  </tr>
+			  <tr>
+			    <td colspan="3" align="middle"><input type="submit" name="btnSubmit" value="Enter"></input></td>
+			  </tr>
+			</table>
+			</form>
+		</td>
+<%End If%>
+<!--
+	<td width="10">&nbsp;</td>
+	<td>
+-->
+	  <tr>
+	    <td colspan="3" valign="top" BGCOLOR="#FFCC00"><b>Current News...</b></td>
+	  </tr>
+<%Do Until mrs.EOF Or iCounter >= mintMaxRecs%>
+	  <tr>
+	    <td colspan="3" valign="top" <%Highlight(mrs("dtUpdated"))%>>
+				<b><%=mrs("Headline")%></b><br /><i><%=mrs("dtUpdated")%></i><br />
+				<%=mrs("Details")%><br /><br />
+	    </td>
+	  </tr>
+<%
+		iCounter = iCounter + 1
+		mrs.MoveNext
+	Loop	
+	
+	mrs.Close
+	Set mrs = Nothing
+%>
+	  <tr>
+	    <td align="left" colspan="3" >&nbsp;</td>
+	  </tr>
+	  <tr>
+	    <td colspan="3" align="left"><%PageNavBar mintCurrentPage, mintMaxPages, DEFAULT_PAGESIZE%></td>
+	  </tr>
+	</table>
+
+<%'=============================================
+'	    <td width="150" valign="top"><b>Coming Soon...</b><br />
+'	       <i><a href="http://www.cafepress.com/timgifford/" target="_blank">T-Shirts and Coffee Mugs</a></i>: They make GREAT gifts!<br /><br />
+'	       <i><a href="../points/default.asp">S.O.T. Point Auction</a></i>: You earned them. Now bid for quality merchandise. Your opportunity to win the ol' jar o' pickles that came with my house!<br /><br />
+'	       <i>Golf Score Tracker</i>: Find out how bad you really are.<br /><br />
+'	       <i>Tim-tation</i>: You may have already won!
+' 	       <br /><br /><b><a href="mailto:tgifford@hotmail.com?Subject=timgifford.net">Contact Me</a></b>
+%>
+<!--	    </td>
+	  </tr>
+	</table>-->
+<!--#INCLUDE FILE="../shared/footer.asp"-->
+<!-- End ImageReady Slices -->
+<%
+	oDebug.End
+	Set oDebug = Nothing
+%>
+</body>
+</html>
+<%
+	Sub Main()
+		Dim sql
+
+		'Login Function
+		Dim oPerson
+		Set oPerson = New clsPerson
+		
+		If Len(Request.Form)>0 Then
+			If Session(SESSION_IS_LOGGED_IN) Then
+				'Do nothing: prevent multiple logins.
+			Else
+				oPerson.Login Request.Form("txtUsername"), Request.Form("txtPassword")
+			End If
+
+			If Not Session(SESSION_IS_LOGGED_IN) Then
+				mstrLoginError = "Sorry. Please try again."
+			End If
+
+		End If
+		
+		'Set oEvent = New clsEvent
+		'Set mrs = oEvent.GetEvents_RS
+		
+		Set mrs = Server.CreateObject("ADODB.Recordset")	
+		mrs.CursorLocation = adUseClient
+		
+		sql = "SELECT * FROM tblNews WHERE dtUpdated <= #" & Date() & "# ORDER BY dtUpdated DESC"
+		'Response.Write "WHERE StartDate <= #" & DateAdd("d",7,Date()) & "#"
+		mrs.Open sql, DB_CONN,adOpenStatic, adLockReadOnly, adCmdText
+		mrs.CacheSize=5
+
+		'Get the current page
+		mintCurrentPage = Request(QRYSTR_PAGE)
+		If  mintCurrentPage="" Then
+		   mintCurrentPage = DEFAULT_PAGE
+		End If
+		
+		'Get the number of records to display per page
+		mintPageSize = DEFAULT_PAGESIZE
+		'If  mintPageSize="" Then
+		'   mintPageSize = DEFAULT_PAGESIZE
+		'End If
+		
+		mrs.MoveFirst
+		mrs.PageSize = mintPageSize
+		
+		mintMaxPages = CInt(mrs.PageCount)
+		mintMaxRecs = CInt(mrs.PageSize)
+		mrs.AbsolutePage = mintCurrentPage
+		
+	End Sub
+	
+	Sub Highlight(dtDate)
+		If IsDate(dtDate) Then
+			If CDate(dtDate) >= dateadd("d",NEW_NEWS_WINDOW,Date()) Then 
+				Response.Write "class=""box"""
+			End If
+		End If
+	End Sub
+	
+Sub PageNavBar(intCurrentPage, intMaxPages, intPageSize)
+	Dim strScriptName
+	Dim intCounter
+	Dim intCounterStart
+	Dim intCounterEnd
+	Dim pad, ref
+			
+			
+	pad = ""
+	strScriptName = Request.ServerVariables("SCRIPT_NAME")
+			
+	Response.Write "<table rows=""1"" border=""0"" width=""97%""><tr>"
+	Response.Write "<td>"
+	'Response.Write "<font size='2' color='black' face='Verdana, Arial,Helvetica, sans-serif'>"
+			
+	If (intCurrentPage Mod 10) = 0 Then
+		intCounterStart = intCurrentPage - 9
+	Else
+		intCounterStart = intCurrentPage - (intCurrentPage Mod 10) + 1
+	End If
+			
+	intCounterEnd = intCounterStart + 9
+
+	If intCounterEnd > intMaxPages Then intCounterEnd = intMaxPages
+
+	If intCounterStart <> 1 Then
+		ref = "<a href='" & strScriptName
+		ref = ref & "?" & QRYSTR_PAGE & "=" & 1
+		'ref = ref & "&" & QRYSTR_PAGESIZE & "=" & intPageSize
+		'ref = ref & "&sqlQuery=" & Server.URLencode(mySQL)
+		ref = ref & "'>First</a>&nbsp;:&nbsp;"
+		Response.Write ref
+
+
+		ref = "<a href='" & strScriptName
+		ref = ref & "?" & QRYSTR_PAGE & "=" & (intCounterStart - 1)
+		'ref = ref & "&" & QRYSTR_PAGESIZE & "=" & intPageSize
+		'ref = ref & "&sqlQuery=" & Server.URLencode(mySQL)
+		ref = ref & "'>Previous</a>&nbsp;"
+		Response.Write ref
+	End If
+			
+	Response.Write "["
+			
+	For intCounter = intCounterStart To intCounterEnd
+		If intCounter >= 10 Then
+			pad = ""
+		End If
+				 
+		If CStr(intCounter) <> intCurrentPage Then
+			ref = "<a href='" & strScriptName
+			ref = ref & "?" & QRYSTR_PAGE & "=" & intCounter
+			'ref = ref & "&" & QRYSTR_PAGESIZE & "=" & intPageSize
+			'ref = ref & "&sqlQuery=" & Server.URLencode(mySQL)
+			ref = ref & "'>" & pad & intCounter & "</a>"
+		Else
+			ref = "<b>" & pad & intCounter & "</b>"
+		End If
+		
+		Response.Write ref
+		
+		If intCounter <> intCounterEnd Then Response.Write " "
+	Next
+			
+	Response.Write "]"
+			
+	If intCounterEnd <> intMaxPages Then
+		ref = "&nbsp;<a href='" & strScriptName
+		ref = ref & "?" & QRYSTR_PAGE & "=" & (intCounter + 1)
+		'ref = ref & "&" & QRYSTR_PAGESIZE & "=" & intPageSize
+		'ref = ref & "&sqlQuery=" & Server.URLencode(mySQL)
+		ref = ref & "'>Next</a>"
+		Response.Write ref
+
+		ref = "&nbsp;:&nbsp;<a href='" & strScriptName
+		ref = ref & "?" & QRYSTR_PAGE & "=" & intMaxPages
+		'ref = ref & "&" & QRYSTR_PAGESIZE & "=" & intPageSize
+		'ref = ref & "&sqlQuery=" & Server.URLencode(mySQL)
+		ref = ref & "'>Last</a>"
+		Response.Write ref
+	End If
+	Response.Write "<br>"
+	Response.Write "</td>"
+	Response.Write "</table>"
+End Sub
+%>
